@@ -1,0 +1,7 @@
+test_id,part_id,timestamp,operator,station,pressure_psi,temp_c,vibration_g,duration_s,result
+T-0001,NOZ-001,2026-05-06T09:15:00,Jesse,bench-1,118.2,41.5,0.18,122,pass
+T-0002,NOZ-002,2026-05-06T10:05:00,Jesse,bench-1,121.9,44.2,0.20,119,pass
+T-0003,NOZ-003,2026-05-06T11:20:00,Jesse,bench-2,135.4,48.9,0.31,128,fail
+T-0004,NOZ-004,2026-05-06T13:40:00,Jesse,bench-2,116.7,43.0,0.17,121,pass
+T-0005,NOZ-005,2026-05-06T15:10:00,Jesse,bench-3,124.8,71.2,0.22,125,review
+T-0006,NOZ-999,2026-05-06T16:30:00,Jesse,bench-3,119.1,42.7,0.18,118,pass
