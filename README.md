@@ -11,9 +11,10 @@ Build a small traceability pipeline for mock hardware test data.
 The project answers:
 
 - Which test runs are linked to a known part/build record?
-- Which runs have missing traceability?
-- Which runs exceed pressure, temperature, or vibration thresholds?
-- What should a hardware/test team review before trusting the data?
+- Which part records connect to open or closed work orders?
+- Which runs exceed pressure, temperature, vibration, or duration thresholds?
+- Which records should a hardware/test team review before trusting the data?
+- Which test stations have the most review items?
 
 ## Why this is relevant to Stoke Space
 
@@ -25,28 +26,21 @@ This project demonstrates:
 - test-data validation
 - traceability between parts, work orders, and test runs
 - data-quality gates before downstream analysis
+- station-level reporting for engineering review
 - clear reporting for engineers and operators
 
-## MVP scope for tomorrow
+## Current status
 
-Tomorrow's target is intentionally small enough to finish in a few focused hours.
+Completed MVP:
 
-### Must finish
-
-- [ ] Run the starter pipeline locally.
-- [ ] Review the mock `parts.csv` and `test_runs.csv` data.
-- [ ] Add 5-10 more realistic test rows.
-- [ ] Improve the anomaly rules or thresholds.
-- [ ] Generate `reports/summary.md` and `reports/anomalies.csv`.
-- [ ] Add one screenshot of the report or terminal output to this README.
-- [ ] Write a short "What I learned" section.
-
-### Nice to add if time allows
-
-- [ ] Add a simple Streamlit dashboard.
-- [ ] Add charts for pass rate by station or batch.
-- [ ] Add a `work_orders.csv` table and link it into the traceability report.
-- [ ] Add a small architecture diagram showing data flow.
+- [x] Built a local Python/pandas traceability pipeline.
+- [x] Added mock `parts.csv`, `work_orders.csv`, and `test_runs.csv` data.
+- [x] Expanded the dataset from 6 to 12 test runs across 3 bench stations.
+- [x] Added validation gates for pressure, temperature, vibration, duration, result values, missing records, and open work orders.
+- [x] Generated `reports/summary.md`, `reports/anomalies.csv`, and `reports/station_summary.csv`.
+- [x] Added pytest coverage for schema validation, traceability joins, station summaries, and review reasons.
+- [x] Added GitHub Actions CI.
+- [x] Added `docs/architecture.md`.
 
 ## Quick start
 
@@ -62,6 +56,42 @@ Expected outputs:
 
 - `reports/summary.md`
 - `reports/anomalies.csv`
+- `reports/station_summary.csv`
+
+## Sample output
+
+```text
+Wrote reports/summary.md, reports/anomalies.csv, and reports/station_summary.csv
+TraceabilityReport(total_tests=12, linked_tests=11, missing_part_links=1, anomalies=6, open_work_order_tests=3, pass_rate=0.5)
+```
+
+Generated summary:
+
+```text
+Total test runs: 12
+Linked to build records: 11
+Missing build-record links: 1
+Open work-order tests: 3
+Runs needing review: 6
+Pass rate: 50.0%
+```
+
+Station rollup:
+
+| station | total_tests | review_items | avg_pressure_psi | avg_temp_c | pass_rate |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| bench-1 | 4 | 1 | 122.8 | 48.8 | 0.75 |
+| bench-2 | 4 | 2 | 126.8 | 47.8 | 0.25 |
+| bench-3 | 4 | 3 | 121.1 | 50.6 | 0.50 |
+
+Review queue examples:
+
+```text
+- T-0003 / NOZ-003 / bench-2: pressure above threshold; vibration above threshold
+- T-0005 / NOZ-005 / bench-3: temperature above threshold; operator marked review
+- T-0006 / NOZ-999 / bench-3: missing build record
+- T-0009 / NOZ-007 / bench-2: duration above threshold; work order still open
+```
 
 ## Data model
 
@@ -75,6 +105,16 @@ Build-side records:
 - `build_date`
 - `material`
 - `work_order`
+
+### `data/raw/work_orders.csv`
+
+Manufacturing/work-order records:
+
+- `work_order`
+- `build_cell`
+- `owner`
+- `status`
+- `planned_close_date`
 
 ### `data/raw/test_runs.csv`
 
@@ -93,26 +133,35 @@ Test-side records:
 
 ## Current validation gates
 
-The starter pipeline flags a run for review when:
+The pipeline flags a run for review when:
 
 - the test run has no linked build record
+- the part points to a missing work-order record
 - pressure is above 130 psi
 - temperature is above 65 C
 - vibration is above 0.30 g
+- duration is above 160 seconds
 - result is marked `review`
 - result is outside the allowed values: `pass`, `fail`, `review`
+- a non-passing run is tied to an open work order
 
 These thresholds are mock values for a portfolio project, not real aerospace limits.
 
-## Resume bullet this project can support after completion
+## What I learned
 
-Possible bullet:
+- Traceability matters because test data is less useful if it cannot be connected back to the part, batch, revision, and work order that produced it.
+- Validation gates should separate raw data collection from engineering decision-making.
+- A small review queue is more useful than a large undifferentiated data dump.
+- Station-level summaries help identify whether issues are isolated to a part/batch or concentrated around a test station.
+- Even a mock hardware dataset needs clear boundaries: this project demonstrates software/data workflow thinking, not professional aerospace test-stand operation.
 
-> Built a Python traceability pipeline for mock hardware test data, linking part/build records to test runs and flagging missing records, threshold violations, and review items before downstream analysis.
+## Resume bullet this project can support
 
-Stronger version if a dashboard is added:
+> Built a Python/pandas traceability pipeline for mock hardware test data, linking part, work-order, and bench-test records while flagging missing records, threshold violations, and review items before downstream analysis.
 
-> Built a Python hardware test-data traceability dashboard with pandas validation gates, linking part/build records to test runs and surfacing review queues for pressure, temperature, vibration, and missing-record anomalies.
+Shorter version if resume space is tight:
+
+> Built a Python hardware test-data traceability pipeline that links part/build records to bench-test runs and generates anomaly reports for engineering review.
 
 ## What to be honest about
 
@@ -125,17 +174,17 @@ Do not claim:
 - cryogenic handling experience
 - production aerospace test operations
 
-Do claim, if completed:
+Do claim:
 
 - built a hardware-adjacent data workflow
 - implemented validation gates
-- connected test records to part/build records
+- connected test records to part/build/work-order records
 - generated review reports for engineering decision-making
+- used pytest and GitHub Actions to verify the project
 
 ## Next improvement ideas
 
-- Add Streamlit dashboard: station filters, batch filters, anomaly table, pass-rate chart.
-- Add CI with pytest through GitHub Actions.
-- Add richer test data with multiple stations and batches.
-- Add schema validation with required columns and allowed units.
-- Add `docs/architecture.md` explaining the ingest -> validate -> report flow.
+- Add a small Streamlit dashboard: station filters, batch filters, anomaly table, pass-rate chart.
+- Add richer mock data with repeated tests per part.
+- Add schema validation with units/ranges and clearer error messages.
+- Add trend charts for pressure, temperature, and vibration by station.

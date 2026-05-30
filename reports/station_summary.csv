@@ -1,0 +1,4 @@
+station,total_tests,review_items,avg_pressure_psi,avg_temp_c,pass_rate
+bench-1,4,1,122.8,48.8,0.75
+bench-2,4,2,126.8,47.8,0.25
+bench-3,4,3,121.1,50.6,0.5
